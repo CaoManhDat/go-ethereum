@@ -360,20 +360,6 @@ func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumb
 
 // Filters
 
-// func (ec *Client) StreamFilterLogs(ctx context.Context, q ethereum.FilterQuery, outChan chan *types.Log, outError chan error) {
-// 	arg, err := toFilterArg(q)
-// 	if err != nil {
-// 		outError <- err
-// 		return
-// 	}
-// 	respBody, err := ec.c.StreamCallContext(ctx, "eth_getLogs", arg)
-// 	if err != nil {
-// 		outError <- err
-// 	}
-// 	respBody.
-// 	return result, err
-// }
-
 // FilterLogs executes a filter query.
 func (ec *Client) FilterLogs(ctx context.Context, q ethereum.FilterQuery) ([]types.Log, error) {
 	var result []types.Log

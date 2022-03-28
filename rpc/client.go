@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -284,21 +285,37 @@ func (c *Client) Call(result interface{}, method string, args ...interface{}) er
 	return c.CallContext(ctx, result, method, args...)
 }
 
-// func (c *Client) StreamCallContext(ctx context.Context, method string, args ...interface{}) (io.ReadCloser, error) {
-// 	msg, err := c.newMessage(method, args...)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	if c.isHTTP {
-// 		hc := c.writeConn.(*httpConn)
-// 		return hc.doRequest(ctx, msg)
-// 	} else {
-// 		return nil, fmt.Errorf("Stream doesn't support anything beside HTTP")
-// 	}
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// }
+func HandleHttpResponse(ctx context.Context, result interface{}, respBody io.ReadCloser) error {
+	defer respBody.Close()
+	decoder := json.NewDecoder(respBody)
+	for decoder.More() {
+		token, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		fieldName, ok := token.(string)
+		if ok {
+			switch fieldName {
+			case "jsonrpc", "id", "method", "params":
+				_, err = decoder.Token()
+				if err != nil {
+					return err
+				}
+			case "error":
+				var jsonError jsonError
+				err = decoder.Decode(&jsonError)
+				if err != nil {
+					return err
+				}
+				return &jsonError
+			case "result":
+				err = decoder.Decode(&result)
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 // CallContext performs a JSON-RPC call with the given arguments. If the context is
 // canceled before the call has successfully returned, CallContext returns immediately.
@@ -316,7 +333,12 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	op := &requestOp{ids: []json.RawMessage{msg.ID}, resp: make(chan *jsonrpcMessage, 1)}
 
 	if c.isHTTP {
-		err = c.sendHTTP(ctx, op, msg)
+		var respBody io.ReadCloser
+		respBody, err = c.sendRawHTTP(ctx, op)
+		if err != nil {
+			return err
+		}
+		return HandleHttpResponse(ctx, result, respBody)
 	} else {
 		err = c.send(ctx, op, msg)
 	}

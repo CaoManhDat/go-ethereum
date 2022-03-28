@@ -138,6 +138,11 @@ func DialHTTP(endpoint string) (*Client, error) {
 	return DialHTTPWithClient(endpoint, new(http.Client))
 }
 
+func (c *Client) sendRawHTTP(ctx context.Context, msg interface{}) (io.ReadCloser, error) {
+	hc := c.writeConn.(*httpConn)
+	return hc.doRequest(ctx, msg)
+}
+
 func (c *Client) sendHTTP(ctx context.Context, op *requestOp, msg interface{}) error {
 	hc := c.writeConn.(*httpConn)
 	respBody, err := hc.doRequest(ctx, msg)
