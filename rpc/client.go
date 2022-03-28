@@ -333,8 +333,9 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	op := &requestOp{ids: []json.RawMessage{msg.ID}, resp: make(chan *jsonrpcMessage, 1)}
 
 	if c.isHTTP {
+		// err = c.sendHTTP(ctx, op, msg)
 		var respBody io.ReadCloser
-		respBody, err = c.sendRawHTTP(ctx, op)
+		respBody, err = c.sendRawHTTP(ctx, msg)
 		if err != nil {
 			return err
 		}
