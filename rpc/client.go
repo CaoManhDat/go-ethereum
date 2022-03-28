@@ -18,9 +18,9 @@ package rpc
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
+	json "github.com/goccy/go-json"
 )
 
 var (
@@ -282,6 +283,22 @@ func (c *Client) SetHeader(key, value string) {
 func (c *Client) Call(result interface{}, method string, args ...interface{}) error {
 	ctx := context.Background()
 	return c.CallContext(ctx, result, method, args...)
+}
+
+func (c *Client) StreamCallContext(ctx context.Context, method string, args ...interface{}) (io.ReadCloser, error) {
+	msg, err := c.newMessage(method, args...)
+	if err != nil {
+		return nil, err
+	}
+	if c.isHTTP {
+		hc := c.writeConn.(*httpConn)
+		return hc.doRequest(ctx, msg)
+	} else {
+		return nil, fmt.Errorf("Stream doesn't support anything beside HTTP")
+	}
+	if err != nil {
+		return nil, err
+	}
 }
 
 // CallContext performs a JSON-RPC call with the given arguments. If the context is
