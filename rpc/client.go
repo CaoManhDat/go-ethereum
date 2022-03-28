@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -285,21 +284,21 @@ func (c *Client) Call(result interface{}, method string, args ...interface{}) er
 	return c.CallContext(ctx, result, method, args...)
 }
 
-func (c *Client) StreamCallContext(ctx context.Context, method string, args ...interface{}) (io.ReadCloser, error) {
-	msg, err := c.newMessage(method, args...)
-	if err != nil {
-		return nil, err
-	}
-	if c.isHTTP {
-		hc := c.writeConn.(*httpConn)
-		return hc.doRequest(ctx, msg)
-	} else {
-		return nil, fmt.Errorf("Stream doesn't support anything beside HTTP")
-	}
-	if err != nil {
-		return nil, err
-	}
-}
+// func (c *Client) StreamCallContext(ctx context.Context, method string, args ...interface{}) (io.ReadCloser, error) {
+// 	msg, err := c.newMessage(method, args...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	if c.isHTTP {
+// 		hc := c.writeConn.(*httpConn)
+// 		return hc.doRequest(ctx, msg)
+// 	} else {
+// 		return nil, fmt.Errorf("Stream doesn't support anything beside HTTP")
+// 	}
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// }
 
 // CallContext performs a JSON-RPC call with the given arguments. If the context is
 // canceled before the call has successfully returned, CallContext returns immediately.
